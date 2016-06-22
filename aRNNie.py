@@ -5,6 +5,7 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 import numpy as np
+import json
 
 class ARNNie:
     def __init__(self, args):
@@ -20,36 +21,34 @@ class ARNNie:
         print 'Data has {} characters, {} unique.'.format(self.data_size, self.vocab_size)
 
         # NN Parameters
-        self.param_w_xh = np.random.randn(self.hidden_size, self.vocab_size) * 0.01 # Input to hidden (U)
-        self.param_w_hh = np.random.randn(self.hidden_size, self.hidden_size) * 0.01 # Hidden to hidden (W)
-        self.param_w_hy = np.random.randn(self.vocab_size, self.hidden_size) * 0.01 # Hidden to output (V)
+        self.param_w_xh = args.get('param_w_xh', np.random.randn(self.hidden_size, self.vocab_size) * 0.01) # Input to hidden (U)
+        self.param_w_hh = args.get('param_w_hh', np.random.randn(self.hidden_size, self.hidden_size) * 0.01) # Hidden to hidden (W)
+        self.param_w_hy = args.get('param_w_hy', np.random.randn(self.vocab_size, self.hidden_size) * 0.01) # Hidden to output (V)
 
-        self.bias_hidden = np.zeros((self.hidden_size, 1)) # hidden bias
-        self.bias_output_y = np.zeros((self.vocab_size, 1)) # output bias
+        self.bias_hidden = args.get('bias_hidden', np.zeros((self.hidden_size, 1))) # hidden bias
+        self.bias_output_y = args.get('bias_output_y', np.zeros((self.vocab_size, 1))) # output bias
 
-        self.mem_w_xh = np.zeros_like(self.param_w_xh)
-        self.mem_w_hh = np.zeros_like(self.param_w_hh)
-        self.mem_w_hy = np.zeros_like(self.param_w_hy)
+        self.mem_w_xh = args.get('mem_w_xh', np.zeros_like(self.param_w_xh))
+        self.mem_w_hh = args.get('mem_w_hh', np.zeros_like(self.param_w_hh))
+        self.mem_w_hy = args.get('mem_w_hy', np.zeros_like(self.param_w_hy))
 
-        self.mem_bias_hidden = np.zeros_like(self.bias_hidden)
-        self.mem_bias_output_y = np.zeros_like(self.bias_output_y)
+        self.mem_bias_hidden = args.get('mem_bias_hidden', np.zeros_like(self.bias_hidden))
+        self.mem_bias_output_y = args.get('mem_bias_output_y', np.zeros_like(self.bias_output_y))
 
-        self.smooth_loss = -np.log(1.0 / self.vocab_size) * self.seq_length # cross-entropy loss
+        self.smooth_loss = args.get('smooth_loss', -np.log(1.0 / self.vocab_size) * self.seq_length) # cross-entropy loss
 
-        self.char_to_ix = {char: i for i, char in enumerate(self.chars)}
-        self.ix_to_char = {i: char for i, char in enumerate(self.chars)}
+        self.char_to_ix = args.get('char_to_ix', {char: i for i, char in enumerate(self.chars)})
+        self.ix_to_char = args.get('ix_to_char', {i: char for i, char in enumerate(self.chars)})
 
-        self.pointer = 0 # Data pointer
+        self.pointer = args.get('pointer', 0) # Data pointer
 
     def step(self, hidden=None):
-        pointer = self.pointer
-
-        if (pointer + self.seq_length + 1) >= len(self.data) or hidden == None:
+        if (self.pointer + self.seq_length + 1) >= len(self.data) or hidden == None:
             hidden = np.zeros((self.hidden_size, 1)) # reset RNN memory
-            pointer = 0 # go from start of data
+            self.pointer = 0 # go from start of data
 
-        inputs = [self.char_to_ix[char] for char in self.data[pointer:pointer + self.seq_length]]
-        targets = [self.char_to_ix[char] for char in self.data[pointer + 1:pointer + self.seq_length + 1]]
+        inputs = [self.char_to_ix[char] for char in self.data[self.pointer:self.pointer + self.seq_length]]
+        targets = [self.char_to_ix[char] for char in self.data[self.pointer + 1:self.pointer + self.seq_length + 1]]
 
         # input vector, output vector, hidden vector, softmax probablity, loss
         input_xs, output_ys, hidden_s, probs, loss = self.forward(inputs, targets, hidden)
@@ -154,3 +153,46 @@ class ARNNie:
 
     def tanh(self, param_w_xh, input_x, param_w_hh, hidden, bias_hidden):
         return np.tanh(np.dot(param_w_xh, input_x) + np.dot(param_w_hh, hidden) + bias_hidden) # tanh
+
+    def save_model(self):
+        model = {
+            'hidden_size': self.hidden_size,
+            'seq_length': self.seq_length,
+            'learning_rate': self.learning_rate,
+            'data': self.data,
+
+            'chars': self.chars,
+            'data_size': self.data_size,
+            'vocab_size': self.vocab_size,
+
+            'param_w_xh': self.param_w_xh.tolist(),
+            'param_w_hh': self.param_w_hh.tolist(),
+            'param_w_hy': self.param_w_hy.tolist(),
+
+            'bias_hidden': self.bias_hidden.tolist(),
+            'bias_output_y': self.bias_output_y.tolist(),
+
+            'mem_w_xh': self.mem_w_xh.tolist(),
+            'mem_w_hh': self.mem_w_hh.tolist(),
+            'mem_w_hy': self.mem_w_hy.tolist(),
+
+            'mem_bias_hidden': self.mem_bias_hidden.tolist(),
+            'mem_bias_output_y': self.mem_bias_output_y.tolist(),
+
+            'smooth_loss': self.smooth_loss,
+
+            'char_to_ix': self.char_to_ix,
+            'ix_to_char': self.ix_to_char,
+
+            'pointer': self.pointer,
+        }
+
+        with open('model.json', 'w') as jsonfile:
+            json.dump(model, jsonfile, indent=4, separators=(',', ': '))
+
+    @classmethod
+    def load_model(cls, filename):
+        with open(filename) as jsonfile:    
+            model = json.load(jsonfile)
+
+        return cls(model)

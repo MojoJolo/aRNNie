@@ -35,4 +35,10 @@ while True:
         print rnn.generate(hidden, inputs[0], 140)
         print ""
 
+    if i % 100000 == 0:
+        rnn.save_model()
+
     i += 1
+
+# To load the model
+# rnn = ARNNie.load_model("model.json")
