@@ -7,7 +7,7 @@ sys.setdefaultencoding('utf8')
 import numpy as np
 import json
 
-class ARNNie:
+class RNN:
     def __init__(self, args):
         self.hidden_size = args['hidden_size']
         self.seq_length = args['seq_length']
@@ -194,5 +194,21 @@ class ARNNie:
     def load_model(cls, filename):
         with open(filename) as jsonfile:    
             model = json.load(jsonfile)
+
+        model['param_w_xh'] = np.array(model['param_w_xh'])
+        model['param_w_hh'] = np.array(model['param_w_hh'])
+        model['param_w_hy'] = np.array(model['param_w_hy'])
+
+        model['bias_hidden'] = np.array(model['bias_hidden'])
+        model['bias_output_y'] = np.array(model['bias_output_y'])
+
+        model['mem_w_xh'] = np.array(model['mem_w_xh'])
+        model['mem_w_hh'] = np.array(model['mem_w_hh'])
+        model['mem_w_hy'] = np.array(model['mem_w_hy'])
+
+        model['mem_bias_hidden'] = np.array(model['mem_bias_hidden'])
+        model['mem_bias_output_y'] = np.array(model['mem_bias_output_y'])
+
+        model['ix_to_char'] = {int(ix): char for ix, char in model['ix_to_char'].iteritems()}
 
         return cls(model)

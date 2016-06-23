@@ -8,5 +8,12 @@ The sample data in this repository is a collection of speeches by President Noyn
 ## To use:
 ```
 pip install -r requirements.txt
-python main.py
+
+# generate the model first:
+python train.py
+
+# If loss seems stagnant (maybe about 5 minutes), ctrl+c to cancel training.
+
+# to generate a sample text:
+python run_model.py
 ```

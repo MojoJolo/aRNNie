@@ -4,7 +4,8 @@ import sys
 reload(sys)  
 sys.setdefaultencoding('utf8')
 
-from aRNNie import ARNNie
+from rnn import RNN
+from lstm import LSTM
 
 hidden_size = 100 # Size of hidden layer of neurons (H)
 seq_length = 25 # Number of steps to unroll the RNN
@@ -21,7 +22,7 @@ args = {
 }
 
 # Initialized the RNN and run the first epoch
-rnn = ARNNie(args)
+rnn = RNN(args)
 inputs, hidden, loss = rnn.step()
 
 i = 0
@@ -37,8 +38,10 @@ while True:
 
     if i % 100000 == 0:
         rnn.save_model()
+        print "Checkpoint saved!"
 
     i += 1
 
-# To load the model
-# rnn = ARNNie.load_model("model.json")
+# args = {
+    
+# }
