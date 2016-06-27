@@ -144,9 +144,7 @@ class RNN:
 
             ixes.append(ix)
 
-        output = ''.join(self.ix_to_char[ix] for ix in ixes)
-
-        return output
+        return [self.ix_to_char[ix] for ix in ixes]
 
     def softmax(self, output_y):
         return np.exp(output_y) / np.sum(np.exp(output_y)) # softmax function
